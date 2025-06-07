@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import { SimplexNoise } from "three/examples/jsm/Addons.js";
 import { RNG } from "./rng";
-import { blocks } from "./blocks";
+import { blocks, resources } from "./blocks";
 
 const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshLambertMaterial();
+
 
 export class World extends THREE.Group {
   data = [];
@@ -54,8 +54,10 @@ export class World extends THREE.Group {
   }
 
   generate() {
-    this.initializeTerrain();
-    this.generateTerrain();
+    const rng = new RNG(this.params.seed);
+    this.initializeTerrain(rng);
+    this.generateResource(rng);
+    this.generateTerrain(rng);
     this.generateMesh();
   }
 
@@ -76,9 +78,30 @@ export class World extends THREE.Group {
       this.data.push(slice);
     }
   }
+  
+  generateResource(rng) {
+    const simplex = new SimplexNoise(rng);
+    resources.forEach((resource)=>{
+      for (let x = 0; x < this.size.width; x++) {
+        for (let y = 0; y < this.size.height; y++) {
+          for (let z = 0; z < this.size.width; z++) {
+            const value = simplex.noise3d(
+              x / resource.scale.x,
+              y / resource.scale.y,
+              z / resource.scale.z
+            );
+            if (value > resource.scarcity) {
+              this.setBlockId(x, y, z, resource.id);
+            }
+          }
+        }
+      }
+    })
+    
+  }
+  
 
-  generateTerrain() {
-    const rng = new RNG(this.params.seed);
+  generateTerrain(rng) {
     const simplex = new SimplexNoise(rng);
     for (let x = 0; x < this.size.width; x++) {
       for (let z = 0; z < this.size.width; z++) {
@@ -86,55 +109,74 @@ export class World extends THREE.Group {
           x / this.params.terrain.scale,
           z / this.params.terrain.scale
         );
-
+  
         const scaledNoise =
           this.params.terrain.offset + this.params.terrain.magnitude * values;
-
+  
         let height = Math.floor(scaledNoise * this.size.height);
         height = Math.max(0, Math.min(height, this.size.height - 1));
-
+  
         for (let y = 0; y <= this.size.height; y++) {
-          if (y < height - 3) {
-            this.setBlockId(x, y, z, blocks.stone.id);
-          } else if (y < height) {
+          const currentBlock = this.getBlock(x, y, z);
+          if (!currentBlock) continue;
+  
+          if (y < height && currentBlock.id === blocks.empty.id) {
             this.setBlockId(x, y, z, blocks.dirt.id);
-          } else if (y === height) {
+          } else if (y === height && currentBlock.id === blocks.empty.id) {
             this.setBlockId(x, y, z, blocks.grass.id);
-          } else {
+          }
+          else if ( y > height){
             this.setBlockId(x, y, z, blocks.empty.id);
           }
+          // Else leave existing block (like stone) untouched
         }
-        
       }
     }
   }
+  
 
   generateMesh() {
     this.clear();
+  
     const maxCount = this.size.width * this.size.width * this.size.height;
-    const mesh = new THREE.InstancedMesh(geometry, material, maxCount);
-    mesh.count = 0;
-
+    const meshes = {};
+  
+    Object.values(blocks)
+      .filter(blockType => blockType.id !== blocks.empty.id)
+      .forEach((block) => {
+        const mesh = new THREE.InstancedMesh(geometry, block.material, maxCount);
+        mesh.name = block.name;
+        mesh.count = 0;
+        mesh.castShadow = true,
+        mesh.receiveShadow = true,
+        meshes[block.id] = mesh; // <-- Corrected this line
+      });
+  
     const matrix = new THREE.Matrix4();
+  
     for (let x = 0; x < this.size.width; x++) {
       for (let y = 0; y < this.size.height; y++) {
         for (let z = 0; z < this.size.width; z++) {
           const block = this.getBlock(x, y, z);
-          const instanceId = mesh.count;
-          const blockType = Object.values(blocks).find(x => x.id == block.id)
-          if (block && block.id !== 0 && !this.isBlockObscured(x,y,z)) {
+          if (!block || block.id === blocks.empty.id) continue;
+  
+          const mesh = meshes[block.id];
+          if (!mesh) continue; // Safety check
+  
+          if (!this.isBlockObscured(x, y, z)) {
+            const instanceId = mesh.count;
             matrix.setPosition(x + 0.5, y + 0.5, z + 0.5);
             mesh.setMatrixAt(instanceId, matrix);
-            mesh.setColorAt(instanceId,new THREE.Color(blockType.color))
             this.setBlockInstanceId(x, y, z, instanceId);
             mesh.count++;
           }
         }
       }
     }
-
-    this.add(mesh);
+  
+    this.add(...Object.values(meshes));
   }
+  
 
   isBlockObscured(x, y, z) {
     const up = this.getBlock(x, y + 1, z)?.id ?? blocks.empty.id;
