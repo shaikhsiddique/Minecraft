@@ -3,6 +3,7 @@ import { OrbitControls } from "three/examples/jsm/Addons.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { World } from "./world";
 import { createUI } from "./ui";
+import { Player } from "./player";
 
 
 const stats = new Stats();
@@ -17,14 +18,13 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 document.body.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(
+const orbitCamera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight
 );
-camera.position.set(-31, 16, -31);
-camera.lookAt(0, 0, 0);
-
-const controls = new OrbitControls(camera, renderer.domElement);
+orbitCamera.position.set(32, 16, 32);
+orbitCamera.lookAt(0, 0, 0);
+const controls = new OrbitControls(orbitCamera, renderer.domElement);
 controls.target.set(16.0,16);
 controls.update()
 
@@ -34,6 +34,8 @@ const scene = new THREE.Scene();
 const world = new World();
 world.generate()
 scene.add(world)
+
+const player = new Player(scene);
 
 const setUpLights = () => {
   const sun = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -59,20 +61,26 @@ const setUpLights = () => {
   scene.add(ambient);
 };
 
-
+let previousTime = performance.now();
 const animate = () => {
-  stats.update()
+  let currentTime = performance.now();
+  const dt = (currentTime-previousTime)/1000;
+  previousTime = currentTime;
+  stats.update();
+  player.applyInputs(dt)
   window.requestAnimationFrame(animate);
-  renderer.render(scene, camera);
+  renderer.render(scene,player.control.isLocked ? player.camera : orbitCamera);
 };
 
 window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
+  orbitCamera.aspect = window.innerWidth / window.innerHeight;
+  orbitCamera.updateProjectionMatrix();
+  player.camera.aspect = window.innerWidth / window.innerHeight;
+  player.camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 
 setUpLights();
-createUI(world)
+createUI(world,player)
 animate();
