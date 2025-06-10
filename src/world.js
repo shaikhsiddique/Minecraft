@@ -165,7 +165,7 @@ export class World extends THREE.Group {
   
           if (!this.isBlockObscured(x, y, z)) {
             const instanceId = mesh.count;
-            matrix.setPosition(x + 0.5, y + 0.5, z + 0.5);
+            matrix.setPosition(x , y , z );
             mesh.setMatrixAt(instanceId, matrix);
             this.setBlockInstanceId(x, y, z, instanceId);
             mesh.count++;
