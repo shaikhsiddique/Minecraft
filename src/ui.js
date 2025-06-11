@@ -1,12 +1,13 @@
 import GUI from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { blocks, resources } from "./blocks";
 
-export const createUI = (world,player) => {
+export const createUI = (world,player,physics, scene) => {
   const gui = new GUI();
-  const widthController = gui.add(world.size, "width", 8, 128, 1).name("Width");
-  const heightController = gui
-    .add(world.size, "height", 8, 128, 1)
-    .name("Height");
+  const worldFolder = gui.addFolder('World');
+  worldFolder.add(world, 'drawDistance', 0, 5, 1).name('Draw Distance');
+  worldFolder.add(world, 'asyncLoading').name('Async Loading');
+  worldFolder.add(scene.fog, 'near', 1, 200, 1).name('Fog Near');
+  worldFolder.add(scene.fog, 'far', 1, 200, 1).name('Fog Far');
 
   const playerFolder = gui.addFolder("Player");
   playerFolder.add(player, "maxSpeed", 1, 20, 0.1).name("Max Speed");

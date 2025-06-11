@@ -31,7 +31,7 @@ controls.update()
 
 const scene = new THREE.Scene();
 
-
+scene.fog = new THREE.Fog(0x80a0e0, 50, 75);
 const world = new World();
 world.generate()
 scene.add(world)
@@ -40,8 +40,9 @@ const player = new Player(scene);
 
 const physics = new Physics(scene);
 
+const sun = new THREE.DirectionalLight(0xffffff, 1.5);
 const setUpLights = () => {
-  const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+ 
   sun.position.set(50, 30, 50);
   sun.shadow.camera
   sun.castShadow = true
@@ -72,6 +73,10 @@ const animate = () => {
   stats.update();
 
   physics.update(dt,player,world)
+  world.update(player)
+  sun.position.copy(player.position)
+  sun.position.sub(new THREE.Vector3(-50,-50,-50))
+  sun.target.position.copy(player.position)
   window.requestAnimationFrame(animate);
   renderer.render(scene,player.control.isLocked ? player.camera : orbitCamera);
 };
@@ -86,5 +91,5 @@ window.addEventListener("resize", () => {
 
 
 setUpLights();
-createUI(world,player)
+createUI(world,player,physics,scene)
 animate();
