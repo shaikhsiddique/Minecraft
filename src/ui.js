@@ -19,6 +19,19 @@ export const createUI = (world,player,physics, scene) => {
   terrainFolder.add(world.params.terrain, "magnitude", 0, 1).name("Magnitude");
   terrainFolder.add(world.params.terrain, "offset", 0, 32, 1).name("Offset");
 
+  const treesFolder = terrainFolder.addFolder('Trees').close();
+  treesFolder.add(world.params.trees, 'frequency', 0, 0.1).name('Frequency');
+  treesFolder.add(world.params.trees.trunk, 'minHeight', 0, 10, 1).name('Min Trunk Height');
+  treesFolder.add(world.params.trees.trunk, 'maxHeight', 0, 10, 1).name('Max Trunk Height');
+  treesFolder.add(world.params.trees.canopy, 'minRadius', 0, 10, 1).name('Min Canopy Size');
+  treesFolder.add(world.params.trees.canopy, 'maxRadius', 0, 10, 1).name('Max Canopy Size');
+  treesFolder.add(world.params.trees.canopy, 'density', 0, 1).name('Canopy Density');
+
+  const cloudsFolder = worldFolder.addFolder('Clouds').close();
+  cloudsFolder.add(world.params.clouds, 'density', 0, 1).name('Density');
+  cloudsFolder.add(world.params.clouds, 'scale', 1, 100, 1).name('Scale');
+
+
   for (const resource of resources) {
     const resourceFolder = gui.addFolder(resource.name);
     resourceFolder.add(resource, "scarcity", 0, 1).name("Scarcity");

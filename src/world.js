@@ -12,6 +12,22 @@ export class World extends THREE.Group {
       magnitude: 0.5,
       offset: 0.2,
     },
+    trees: {
+      trunk: {
+        minHeight: 4,
+        maxHeight: 7
+      },
+      canopy: {
+        minRadius: 3,
+        maxRadius: 3,
+        density: 0.7 // Vary between 0.0 and 1.0
+      },
+      frequency: 0.005
+    },
+    clouds: {
+      scale: 30,
+      density: 0.3
+    }
   };
   chunkSize = { width: 64, height: 32 };
   drawDistance = 1;
