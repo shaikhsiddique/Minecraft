@@ -1,5 +1,8 @@
 import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/Addons.js";
+import { blocks } from "./blocks";
+
+const CENTER_SCREEN = new THREE.Vector2();
 
 export class Player {
   radius = 0.5;
@@ -19,23 +22,81 @@ export class Player {
   cameraHelper = new THREE.CameraHelper(this.camera);
   control = new PointerLockControls(this.camera, document.body);
 
-  constructor(scene) {
+  raycaster = new THREE.Raycaster(
+    new THREE.Vector3(),
+    new THREE.Vector3(),
+    0,
+    3
+  );
+  selectedCoords = null;
+  activeBlockId = blocks.empty.id;
+
+  constructor(scene, world) {
+    this.world = world;
     this.camera.position.set(32, 16, 32);
     scene.add(this.camera);
     scene.add(this.cameraHelper);
 
     document.addEventListener("keyup", this.onKeyUp.bind(this));
     document.addEventListener("keydown", this.onKeyDown.bind(this));
+    document.addEventListener("mousedown", this.onMouseDown.bind(this));
 
     this.boundsHelper = new THREE.Mesh(
       new THREE.CylinderGeometry(this.radius, this.radius, this.height, 16),
       new THREE.MeshBasicMaterial({ wireframe: true })
     );
     scene.add(this.boundsHelper);
+
+    const selectionMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.3,
+      color: 0xffffaa,
+    });
+    const selectionGeometry = new THREE.BoxGeometry(1.01, 1.01, 1.01);
+    this.selectionHelper = new THREE.Mesh(selectionGeometry, selectionMaterial);
+    scene.add(this.selectionHelper);
   }
 
   get position() {
     return this.camera.position;
+  }
+
+  update(world) {
+    this.updateRaycaster(world);
+  }
+
+  updateRaycaster(world) {
+    this.raycaster.setFromCamera(CENTER_SCREEN, this.camera);
+    const intersections = this.raycaster.intersectObject(world, true);
+
+    if (intersections.length > 0) {
+      const intersection = intersections[0];
+
+      // Get the chunk associated with the selected block
+      const chunk = intersection.object.parent;
+
+      // Get the transformation matrix for the selected block
+      const blockMatrix = new THREE.Matrix4();
+      intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
+
+      // Set the selected coordinates to the origin of the chunk,
+      // then apply the transformation matrix of the block to get
+      // the block coordinates
+      this.selectedCoords = chunk.position.clone();
+      this.selectedCoords.applyMatrix4(blockMatrix);
+
+      if (this.activeBlockId !== blocks.empty.id) {
+        // If we are adding a block, move it 1 block over in the direction
+        // of where the ray intersected the cube
+        this.selectedCoords.add(intersection.normal);
+      }
+
+      this.selectionHelper.position.copy(this.selectedCoords);
+      this.selectionHelper.visible = true;
+    } else {
+      this.selectedCoords = null;
+      this.selectionHelper.visible = false;
+    }
   }
 
   updateBoundsHelper() {
@@ -94,6 +155,18 @@ export class Player {
       this.control.lock();
     }
     switch (event.code) {
+      case "Digit0":
+      case "Digit1":
+      case "Digit2":
+      case "Digit3":
+      case "Digit4":
+      case "Digit5":
+      case "Digit6":
+      case "Digit7":
+      case "Digit8":
+        
+        this.activeBlockId = Number(event.key);
+      break;
       case "KeyW":
         this.input.z = this.maxSpeed;
         break;
@@ -110,6 +183,28 @@ export class Player {
         this.position.set(32, 16, 32);
         this.velocity.set(0, 0, 0);
         break;
+    }
+  }
+  onMouseDown(event) {
+    if (this.control.isLocked) {
+      // Is a block selected?
+      if (this.selectedCoords) {
+      
+        if (this.activeBlockId === blocks.empty.id) {
+          this.world.removeBlock(
+            this.selectedCoords.x,
+            this.selectedCoords.y,
+            this.selectedCoords.z
+          );
+        } else {
+          this.world.addBlock(
+            this.selectedCoords.x,
+            this.selectedCoords.y,
+            this.selectedCoords.z,
+            this.activeBlockId
+          );
+        }
+      }
     }
   }
 

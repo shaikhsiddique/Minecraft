@@ -10,11 +10,12 @@ export class WorldChunks extends THREE.Group {
   data = [];
   
 
-  constructor(size,params) {
+  constructor(size,params,dataStore) {
     super();
     this.loaded = false;
     this.size = size;
     this.params = params;
+    this.dataStore = dataStore;
   }
 
   getBlock(x, y, z) {
@@ -53,8 +54,22 @@ export class WorldChunks extends THREE.Group {
     this.initializeTerrain(rng);
     this.generateResource(rng);
     this.generateTerrain(rng);
+    this.loadPlayerChanges()
     this.generateMesh();
     this.loaded = true;
+  }
+
+  loadPlayerChanges() {
+    for (let x = 0; x < this.size.width; x++) {
+      for (let y = 0; y < this.size.height; y++) {
+        for (let z = 0; z < this.size.width; z++) {
+          if (this.dataStore.contains(this.position.x, this.position.z, x, y, z)) {
+            const blockId = this.dataStore.get(this.position.x, this.position.z, x, y, z);
+            this.setBlockId(x, y, z, blockId);
+          }
+        }
+      }
+    }
   }
 
   initializeTerrain() {
@@ -195,6 +210,71 @@ export class WorldChunks extends THREE.Group {
       return true;
     }
   }
+  addBlock(x, y, z, blockId) {
+    if (this.getBlock(x, y, z).id === blocks.empty.id) {
+      this.setBlockId(x, y, z, blockId);
+      this.addBlockInstance(x, y, z);
+      this.dataStore.set(this.position.x, this.position.z, x, y, z, blockId);
+    }
+  }
+  removeBlock(x, y, z) {
+    const block = this.getBlock(x, y, z);
+    if (block && block.id !== blocks.empty.id) {
+      this.deleteBlockInstance(x, y, z);
+      this.setBlockId(x, y, z, blocks.empty.id);
+      this.dataStore.set(this.position.x, this.position.z, x, y, z, blocks.empty.id);
+    }
+  }
+  deleteBlockInstance(x, y, z) {
+    const block = this.getBlock(x, y, z);
+    if (block.id === blocks.empty.id || block.instanceId === null) return;
+  
+    const blockType = Object.values(blocks).find(b => b.id === block.id);
+    if (!blockType) return;
+  
+    const mesh = this.children.find((instanceMesh) => instanceMesh.name === blockType.name);
+    if (!mesh) return;
+  
+    const instanceId = block.instanceId;
+  
+    const lastMatrix = new THREE.Matrix4();
+    mesh.getMatrixAt(mesh.count - 1, lastMatrix);
+  
+    const v = new THREE.Vector3();
+    v.setFromMatrixPosition(lastMatrix); // safer than applyMatrix4
+    this.setBlockInstanceId(v.x, v.y, v.z, instanceId);
+  
+    mesh.setMatrixAt(instanceId, lastMatrix);
+    mesh.count--;
+  
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  
+    this.setBlockInstanceId(x, y, z, null);
+  }
+  
+  addBlockInstance(x, y, z) {
+    const block = this.getBlock(x, y, z);
+  
+    if (block && block.id !== blocks.empty.id && block.instanceId === null) {
+      const blockType = Object.values(blocks).find(b => b.id === block.id);
+      if (!blockType) return;
+  
+      const mesh = this.children.find((instanceMesh) => instanceMesh.name === blockType.name);
+      if (!mesh) return;
+  
+      const instanceId = mesh.count++;
+      this.setBlockInstanceId(x, y, z, instanceId);
+  
+      const matrix = new THREE.Matrix4();
+      matrix.setPosition(x, y, z);
+      mesh.setMatrixAt(instanceId, matrix);
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingSphere();
+    }
+  }
+  
+
   disposeInstances() {
     this.traverse((obj) => {
       if (obj.dispose) obj.dispose();

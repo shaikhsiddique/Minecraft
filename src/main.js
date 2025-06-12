@@ -36,7 +36,7 @@ const world = new World();
 world.generate()
 scene.add(world)
 
-const player = new Player(scene);
+const player = new Player(scene,world);
 
 const physics = new Physics(scene);
 
@@ -71,7 +71,7 @@ const animate = () => {
   const dt = (currentTime-previousTime)/1000;
   previousTime = currentTime;
   stats.update();
-
+  player.update(world)
   physics.update(dt,player,world)
   world.update(player)
   sun.position.copy(player.position)

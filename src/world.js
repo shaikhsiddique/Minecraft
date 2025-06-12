@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { WorldChunks } from "./worldChunks";
+import { DataStore } from "./dataStore";
 export class World extends THREE.Group {
   
   asyncLoading = true;
@@ -14,11 +15,12 @@ export class World extends THREE.Group {
   };
   chunkSize = { width: 64, height: 32 };
   drawDistance = 1;
+  dataStore = new DataStore()
   constructor(seed = 0) {
     super();
     this.seed = seed;
   }
-  generate(clearCache = false) {
+  generate(clearCache = true) {
     if (clearCache) {
       this.dataStore.clear();
     }
@@ -102,7 +104,7 @@ export class World extends THREE.Group {
     chunk.userData = { x, z };
 
     if (this.asyncLoading) {
-      requestIdleCallback(chunk.generate.bind(chunk), { timeout: 500 });
+      requestIdleCallback(chunk.generate.bind(chunk), { timeout: 1500 });
     } else {
       chunk.generate();
     }
@@ -155,5 +157,76 @@ export class World extends THREE.Group {
       }
     });
     this.clear();
+  }
+
+
+  addBlock(x, y, z, blockId) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk) {
+      chunk.addBlock(
+        coords.block.x,
+        coords.block.y,
+        coords.block.z,
+        blockId
+      );
+
+      // Hide neighboring blocks if they are completely obscured
+      this.hideBlock(x - 1, y, z);
+      this.hideBlock(x + 1, y, z);
+      this.hideBlock(x, y - 1, z);
+      this.hideBlock(x, y + 1, z);
+      this.hideBlock(x, y, z - 1);
+      this.hideBlock(x, y, z + 1);
+    }
+  }
+
+  removeBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (coords.block.y === 0) return;
+
+    if (chunk) {
+      console.log("fired");
+      chunk.removeBlock(
+        coords.block.x,
+        coords.block.y,
+        coords.block.z
+      );
+      this.revealBlock(x - 1, y, z);
+      this.revealBlock(x + 1, y, z);
+      this.revealBlock(x, y - 1, z);
+      this.revealBlock(x, y + 1, z);
+      this.revealBlock(x, y, z - 1);
+      this.revealBlock(x, y, z + 1);
+
+      
+    }
+  }
+  revealBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk) {
+      chunk.addBlockInstance(
+        coords.block.x,
+        coords.block.y,
+        coords.block.z
+      )
+    }
+  }
+  hideBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk && chunk.isBlockObscured(coords.block.x, coords.block.y, coords.block.z)) {
+      chunk.deleteBlockInstance(
+        coords.block.x,
+        coords.block.y,
+        coords.block.z
+      )
+    }
   }
 }
