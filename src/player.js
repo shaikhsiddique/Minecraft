@@ -34,6 +34,7 @@ export class Player {
   constructor(scene, world) {
     this.world = world;
     this.camera.position.set(32, 16, 32);
+    this.camera.layers.enable(1);
     scene.add(this.camera);
     scene.add(this.cameraHelper);
 
@@ -55,6 +56,8 @@ export class Player {
     const selectionGeometry = new THREE.BoxGeometry(1.01, 1.01, 1.01);
     this.selectionHelper = new THREE.Mesh(selectionGeometry, selectionMaterial);
     scene.add(this.selectionHelper);
+
+    this.raycaster.layers.set(0)
   }
 
   get position() {

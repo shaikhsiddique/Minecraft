@@ -13,11 +13,12 @@ export const createUI = (world,player,physics, scene) => {
   playerFolder.add(player, "maxSpeed", 1, 20, 0.1).name("Max Speed");
   playerFolder.add(player.cameraHelper, 'visible').name('Show Camera Helper');
 
-  const terrainFolder = gui.addFolder("Terrain");
-  terrainFolder.add(world.params, "seed", 0, 10000, 1).name("Seed");
-  terrainFolder.add(world.params.terrain, "scale", 10, 100).name("Scale");
-  terrainFolder.add(world.params.terrain, "magnitude", 0, 1).name("Magnitude");
-  terrainFolder.add(world.params.terrain, "offset", 0, 32, 1).name("Offset");
+  const terrainFolder = worldFolder.addFolder('Terrain').close();
+  terrainFolder.add(world.params, 'seed', 0, 10000, 1).name('Seed');
+  terrainFolder.add(world.params.terrain, 'scale', 10, 100).name('Scale');
+  terrainFolder.add(world.params.terrain, 'magnitude', 0, 1).name('Magnitude');
+  terrainFolder.add(world.params.terrain, 'offset', 0, 32, 1).name('Offset');
+  terrainFolder.add(world.params.terrain, 'waterOffset', 0, 32, 1).name('Water Offset');
 
   const treesFolder = terrainFolder.addFolder('Trees').close();
   treesFolder.add(world.params.trees, 'frequency', 0, 0.1).name('Frequency');

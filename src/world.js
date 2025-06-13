@@ -8,9 +8,20 @@ export class World extends THREE.Group {
   params = {
     seed: 0,
     terrain: {
-      scale: 70,
-      magnitude: 0.5,
-      offset: 0.2,
+      scale: 100,
+      magnitude: 8,
+      offset: 6,
+      waterOffset: 4
+    },
+    biomes: {
+      scale: 500,
+      variation: {
+        amplitude: 0.2,
+        scale: 50
+      },
+      tundraToTemperate: 0.25,
+      temperateToJungle: 0.5,
+      jungleToDesert: 0.75
     },
     trees: {
       trunk: {
@@ -29,7 +40,8 @@ export class World extends THREE.Group {
       density: 0.3
     }
   };
-  chunkSize = { width: 64, height: 32 };
+
+  chunkSize = { width: 64, height: 42 };
   drawDistance = 1;
   dataStore = new DataStore()
   constructor(seed = 0) {
