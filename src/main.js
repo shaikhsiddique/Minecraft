@@ -5,6 +5,7 @@ import { World } from "./world";
 import { createUI } from "./ui";
 import { Player } from "./player";
 import { Physics } from "./physics";
+import { ModelLoader } from "./modelLoader";
 
 
 const stats = new Stats();
@@ -38,8 +39,23 @@ world.generate()
 scene.add(world)
 
 const player = new Player(scene,world);
-
 const physics = new Physics(scene);
+
+// Set initial player position high up to ensure falling
+player.position.set(32, 40, 32);
+player.velocity.set(0, 0, 0);
+player.control.lock();
+
+world.player = player;
+
+// Initialize model loader after player is fully set up
+const modelLoader = new ModelLoader((models) => {
+  if (player && player.tool) {
+    player.tool.setMesh(models.pickaxe);
+  } else {
+    console.error('Player or player.tool is not initialized');
+  }
+});
 
 const sun = new THREE.DirectionalLight(0xffffff, 1.5);
 const setUpLights = () => {

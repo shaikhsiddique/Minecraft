@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/Addons.js";
 import { blocks } from "./blocks";
+import { Tool } from "./tool";
 
 const CENTER_SCREEN = new THREE.Vector2();
 
@@ -9,6 +10,7 @@ export class Player {
   height = 1.75;
   maxSpeed = 10;
   jumpSpeed = 10;
+  sprinting = false;
   onGround = false;
   input = new THREE.Vector3();
   velocity = new THREE.Vector3();
@@ -31,12 +33,15 @@ export class Player {
   selectedCoords = null;
   activeBlockId = blocks.empty.id;
 
+  tool = new Tool();
+
   constructor(scene, world) {
     this.world = world;
-    this.camera.position.set(32, 16, 32);
+    this.camera.position.set(32, 40, 32);
     this.camera.layers.enable(1);
     scene.add(this.camera);
     scene.add(this.cameraHelper);
+    this.camera.add(this.tool);
 
     document.addEventListener("keyup", this.onKeyUp.bind(this));
     document.addEventListener("keydown", this.onKeyDown.bind(this));
@@ -57,7 +62,8 @@ export class Player {
     this.selectionHelper = new THREE.Mesh(selectionGeometry, selectionMaterial);
     scene.add(this.selectionHelper);
 
-    this.raycaster.layers.set(0)
+    this.raycaster.layers.set(0);
+    this.onGround = false;
   }
 
   get position() {
@@ -66,6 +72,7 @@ export class Player {
 
   update(world) {
     this.updateRaycaster(world);
+    this.tool.update();
   }
 
   updateRaycaster(world) {
@@ -121,13 +128,14 @@ export class Player {
 
   applyInputs(dt) {
     if (this.control.isLocked) {
-      this.velocity.x = this.input.x;
-      this.velocity.z = this.input.z;
+      this.velocity.x = this.input.x * (this.sprinting ? 2 : 1);
+      this.velocity.z = this.input.z * (this.sprinting ? 2 : 1);
       this.control.moveRight(this.velocity.x * dt);
       this.control.moveForward(this.velocity.z * dt);
       this.position.y += this.velocity.y * dt;
 
-      document.getElementById("player-position").innerHTML = this.toString();
+      document.getElementById("info-player-position").innerHTML =
+        this.toString();
     }
   }
 
@@ -150,11 +158,18 @@ export class Player {
           this.velocity.y += this.jumpSpeed;
         }
         break;
+        case 'ShiftLeft':
+      case 'ShiftRight':
+        this.sprinting = false;
+        break;
     }
   }
   onKeyDown(event) {
+    if (document.getElementById("overlay")) {
+      document.getElementById("overlay").remove();
+    }
     if (!this.control.isLocked) {
-      this.position.set(32, 16, 32);
+      this.position.set(32, 40, 32);
       this.control.lock();
     }
     switch (event.code) {
@@ -167,9 +182,16 @@ export class Player {
       case "Digit6":
       case "Digit7":
       case "Digit8":
-        
+        document
+          .getElementById(`toolbar-${this.activeBlockId}`)
+          ?.classList.remove("selected");
+        document
+          .getElementById(`toolbar-${event.key}`)
+          ?.classList.add("selected");
+
         this.activeBlockId = Number(event.key);
-      break;
+        this.tool.visible = this.activeBlockId === 0;
+        break;
       case "KeyW":
         this.input.z = this.maxSpeed;
         break;
@@ -183,8 +205,20 @@ export class Player {
         this.input.x = this.maxSpeed;
         break;
       case "KeyR":
-        this.position.set(32, 16, 32);
+        this.position.set(32, 40, 32);
         this.velocity.set(0, 0, 0);
+        break;
+      case "KeyK":
+        this.world.save();
+        break;
+      case "KeyL":
+        this.world.load();
+        this.position.set(32, 40, 32);
+        this.velocity.set(0, 0, 0);
+        break;
+      case "ShiftLeft":
+      case "ShiftRight":
+        this.sprinting = true;
         break;
     }
   }
@@ -192,13 +226,13 @@ export class Player {
     if (this.control.isLocked) {
       // Is a block selected?
       if (this.selectedCoords) {
-      
         if (this.activeBlockId === blocks.empty.id) {
           this.world.removeBlock(
             this.selectedCoords.x,
             this.selectedCoords.y,
             this.selectedCoords.z
           );
+          this.tool.startAnimation();
         } else {
           this.world.addBlock(
             this.selectedCoords.x,

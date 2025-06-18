@@ -47,7 +47,45 @@ export class World extends THREE.Group {
   constructor(seed = 0) {
     super();
     this.seed = seed;
+
+    document.addEventListener('keydown', (ev) => {
+      switch (ev.code) {
+        case 'KeyK': 
+          this.save();
+          break;
+        case 'KeyL': 
+          this.load();
+          break;
+        
+      }
+    });
+    
   }
+
+  save() {
+    localStorage.setItem('minecraft_params', JSON.stringify(this.params));
+    localStorage.setItem('minecraft_data', JSON.stringify(this.dataStore.data));
+    document.getElementById('status').innerHTML = 'GAME SAVED';
+    setTimeout(() => document.getElementById('status').innerHTML = '', 3000);
+  }
+
+   async load() {
+    this.params = JSON.parse(localStorage.getItem('minecraft_params'));
+    this.dataStore.data = JSON.parse(localStorage.getItem('minecraft_data'));
+  
+    await this.generate(); // Regenerate the world first
+  
+    
+    setTimeout(() => {
+      this.player.position.set(32, 16, 32);
+      this.player.velocity.set(0, 0, 0);
+    }, 2000);
+  
+    document.getElementById('status').innerHTML = 'GAME LOADED';
+    setTimeout(() => document.getElementById('status').innerHTML = '', 3000);
+  }
+  
+
   generate(clearCache = true) {
     if (clearCache) {
       this.dataStore.clear();
@@ -217,7 +255,6 @@ export class World extends THREE.Group {
     if (coords.block.y === 0) return;
 
     if (chunk) {
-      console.log("fired");
       chunk.removeBlock(
         coords.block.x,
         coords.block.y,
