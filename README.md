@@ -41,8 +41,8 @@ A fully functional, responsive Minecraft-inspired voxel game built using **Three
 
 ## 📷 Screenshots
 
-View screenshots of the game here:  
-📸 [https://drive.google.com/file/d/17G5Pn2rfE8BO5vxzD7VHn20KbgJ5WIG4/view?usp=sharing](https://drive.google.com/file/d/17G5Pn2rfE8BO5vxzD7VHn20KbgJ5WIG4/view?usp=sharing)
+![Minecraft Screenshot](https://drive.google.com/uc?export=view&id=17G5Pn2rfE8BO5vxzD7VHn20KbgJ5WIG4)
+
 
 ---
 
