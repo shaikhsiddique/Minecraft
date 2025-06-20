@@ -1,7 +1,13 @@
 
 # 🧱 Minecraft Clone – Built with Three.js
 
-A fully functional, responsive Minecraft-inspired voxel game built using **Three.js** and **vanilla JavaScript**. Designed to run directly in the browser — no downloads, no installs, just blocks!
+
+A fully functional, responsive Minecraft-inspired voxel game built using **Three.js** and **vanilla JavaScript**. Designed to run directly in the browser — no downloads, no installs, just blocks!`
+
+---
+![Minecraft Screenshot](https://drive.google.com/uc?export=view&id=17G5Pn2rfE8BO5vxzD7VHn20KbgJ5WIG4)
+
+---
 
 🔗 **Live Demo**: [https://minecraft-nine-pi.vercel.app](https://minecraft-nine-pi.vercel.app)  
 🎒 **Portfolio**: [https://portfolio-ruby-phi-51.vercel.app](https://portfolio-ruby-phi-51.vercel.app)
@@ -39,12 +45,7 @@ A fully functional, responsive Minecraft-inspired voxel game built using **Three
 
 ---
 
-## 📷 Screenshots
 
-![Minecraft Screenshot](https://drive.google.com/uc?export=view&id=17G5Pn2rfE8BO5vxzD7VHn20KbgJ5WIG4)
-
-
----
 
 ## 📦 Installation & Development
 
